@@ -15,7 +15,7 @@ Professional Binance Pay integration for WHMCS. Secure, ISO-standard quality, an
 2. In WHMCS Admin, activate **Binance Pay (Premium Tech)** under Payment Gateways.
 3. Configure your Merchant API Key and Secret Key.
 
-## ⚠️ Important Note (Error 451)
+## ⚠️ Important Note 
 Binance Pay API blocks binanace non supported  IP addresses. For seamless operation, host your WHMCS on **UK or European servers (Binance Country Supported Regions)**.
 
 ---
