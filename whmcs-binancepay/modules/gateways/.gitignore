@@ -1,0 +1,10 @@
+# Ignore WHMCS configuration and logs
+configuration.php
+*.log
+error_log
+.env
+.htaccess
+
+# OS generated files
+.DS_Store
+Thumbs.db
