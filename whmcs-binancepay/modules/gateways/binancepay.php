@@ -1,21 +1,33 @@
 <?php
 /**
- * Binance Pay Production Module for WHMCS
+ * Binance Pay WHMCS Gateway
+ * 
+ * @package    Premium Technologies Private Limited
+ * @author     Premium Technologies <info@premiumtech.uk>
+ * @copyright  Copyright (c) 2026 Premium Technologies Private Limited
+ * @license    MIT License
+ * @link       https://www.premiumtech.uk
  */
+
 if (!defined("WHMCS")) die("This file cannot be accessed directly");
+
+function binancepay_MetaData() {
+    return array(
+        'DisplayName' => 'Binance Pay by Premium Technologies',
+        'APIVersion' => '1.1',
+    );
+}
 
 function binancepay_config() {
     return array(
-        'FriendlyName' => array('Type' => 'System', 'Value' => 'Binance Pay Live'),
-        'apiKey'       => array('FriendlyName' => 'Merchant API Key', 'Type' => 'text', 'Size' => '64'),
-        'secretKey'    => array('FriendlyName' => 'Merchant Secret Key', 'Type' => 'password', 'Size' => '64'),
+        'FriendlyName' => array('Type' => 'System', 'Value' => 'Binance Pay (Premium Tech)'),
+        'apiKey'       => array('FriendlyName' => 'Binance API Key', 'Type' => 'text', 'Size' => '64'),
+        'secretKey'    => array('FriendlyName' => 'Binance Secret Key', 'Type' => 'password', 'Size' => '64'),
     );
 }
 
 function binancepay_link($params) {
-    // Live Production Endpoint
     $url = "https://bpay.binanceapi.com/binancepay/openapi/v2/order";
-
     $timestamp = round(microtime(true) * 1000);
     $nonce = substr(str_shuffle("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"), 0, 32);
     
@@ -40,10 +52,10 @@ function binancepay_link($params) {
 
     $headers = array(
         "Content-Type: application/json",
-        "BinancePay-Timestamp: " . $timestamp,
-        "BinancePay-Nonce: " . $nonce,
+        "BinancePay-Timestamp: $timestamp",
+        "BinancePay-Nonce: $nonce",
         "BinancePay-Certificate-SN: " . $params['apiKey'],
-        "BinancePay-Signature: " . $signature
+        "BinancePay-Signature: $signature"
     );
 
     $ch = curl_init($url);
@@ -51,30 +63,14 @@ function binancepay_link($params) {
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_POST, true);
     curl_setopt($ch, CURLOPT_POSTFIELDS, $json_payload);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true); // Required for Production
     
     $response_raw = curl_exec($ch);
-    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $curl_error = curl_error($ch);
+    $response = json_decode($response_raw, true);
     curl_close($ch);
 
-    // LOGGING: Check WHMCS > Billing > Gateway Log for these details if it fails
-    logModuleCall("binancepay", "create_order", $json_payload, $response_raw, $response_raw, array($params['apiKey']));
-
-    if ($curl_error) {
-        return '<div class="alert alert-danger">Network Error: ' . $curl_error . '</div>';
-    }
-
-    $response = json_decode($response_raw, true);
-
     if (isset($response['status']) && $response['status'] === 'SUCCESS') {
-        return '<a href="' . $response['data']['checkoutUrl'] . '" class="btn btn-success" style="font-weight:bold;">Pay with Binance Pay</a>';
+        return '<a href="' . $response['data']['checkoutUrl'] . '" class="btn btn-success" style="padding: 10px 20px;">Pay with Binance Pay</a>';
     } else {
-        $errorMsg = isset($response['errorMessage']) ? $response['errorMessage'] : "HTTP Status: $http_code";
-        // Displaying detailed error for debugging
-        return '<div class="alert alert-warning">
-                    <strong>Payment Unavailable:</strong> ' . $errorMsg . '<br>
-                    <small>Please ensure your server IP is whitelisted in Binance Merchant Portal.</small>
-                </div>';
+        return '<div class="alert alert-danger">Error: ' . ($response['errorMessage'] ?? 'Connection Failed') . '</div>';
     }
 }
